@@ -21,13 +21,25 @@ var FSHADER_SOURCE = `
   precision mediump float;
   varying vec2 v_UV;
   uniform vec4 u_FragColor;
+  uniform sampler2D u_Sampler0;
+  uniform int u_whichTexture;
   void main() {
-    gl_FragColor = u_FragColor;
-    gl_FragColor = vec4(v_UV, 1.0, 1.0);
+      if (u_whichTexture == -2) {             // Use color
+        gl_FragColor = u_FragColor;
+
+      } else if (u_whichTexture == -1) {      // Use UV debug color
+        gl_FragColor = vec4(v_UV,1.0,1.0);
+
+      } else if (u_whichTexture == 0) {       // Use texture0
+        gl_FragColor = texture2D(u_Sampler0, v_UV);
+        
+      } else {                                // Error, put Reddish
+        gl_FragColor = vec4(1,.2,.2,1);
+      }
   }`;
 
 
-let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix; // Global variables
+let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_whichTexture; // Global variables
 
 
 function setupWebGL() {
@@ -101,6 +113,20 @@ function connectVariablesToGLSL() {
     return;
   }
 
+  // Get the storage location of u_Sampler
+  var u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+  if (!u_Sampler0) {
+    console.log('Failed to get the storage location of u_Sampler0');
+    return false;
+  }
+  
+  // Get the storage location of u_Sampler
+  var u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
+  if (!u_whichTexture) {
+    console.log('Failed to get the storage location of u_whichTexture');
+    return false;
+  }
+
   // Set an initial value for the matrix to identify
   var identityM = new Matrix4();
   gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
@@ -119,6 +145,51 @@ function addActionsForHTMLUI() {
 }
 
 
+function initTextures(gl, n) {
+  var image = new Image();  // Create the image object
+  if (!image) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+  // Register the event handler to be called on loading an image
+  image.onload = function(){ sendImageToTEXTURE0(image); };
+  // Tell the browser to load an image
+  image.src = 'sky.jpg';
+
+  // Add all textures loading
+
+  return true;
+}
+
+function sendImageToTEXTURE0(image) {
+  var texture = gl.createTexture();   // Create a texture object
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+  
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
+  // Enable texture unit0
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind the texture object to the target
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Set the texture parameters
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  // Set the texture image
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+  
+  // Set the texture unit 0 to the sampler
+  gl.uniform1i(u_Sampler0, 0);
+  
+  // gl.clear(gl.COLOR_BUFFER_BIT);   // Clear <canvas>
+
+  // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n); // Draw the rectangle
+
+  console.log("Finished loading the texture for TEXTURE0");
+}
+
+
 function main() {
   // Set up canvas and gl variables
   setupWebGL();
@@ -128,6 +199,9 @@ function main() {
 
   // Set up actions for the HTML UI elements
   addActionsForHTMLUI();
+
+  // Call the texture helper functions
+  initTextures(gl, 0);
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -181,10 +255,18 @@ function renderScene() {
   // Draw the body cube
   var body = new Cube(); // Creating the body as a large rectangle
   body.color = [0.752, 0.752, 0.752, 1]; // Coloring the body silver
-  body.matrix.translate(-0.25, -0.025, 0.0); // X and Y placements for the body
+  body.textureNum = 0; // Use the textures on the body
+  body.matrix.translate(-0.25, 0.125, 0.0); // X and Y placements for the body
   body.matrix.rotate(-5, 1, 0, 0); // Set rotation for the body
   body.matrix.scale(0.7, 0.5, 0.7); // Scaling for the body
   body.render(); // Rendering for the body
+ 
+  // Ground plane
+  var ground = new Cube();
+  ground.textureNum = -1; // TODO: Use the default UV on the ground
+  ground.matrix.translate(0, 0, -1);
+  ground.matrix.scale(2, .1, 2);
+  ground.render();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;
