@@ -22,6 +22,7 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
   void main() {
       
@@ -33,14 +34,17 @@ var FSHADER_SOURCE = `
 
       } else if (u_whichTexture == 0) {       // Use texture0
         gl_FragColor = texture2D(u_Sampler0, v_UV);
-        
+      
+      } else if (u_whichTexture == 1) {       // Use texture1
+        gl_FragColor = texture2D(u_Sampler1, v_UV);
+      
       } else {                                // Error, put Reddish
         gl_FragColor = vec4(1,.2,.2,1);
       }
   }`
 
 
-let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_whichTexture; // Global variables
+let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_Sampler1, u_whichTexture; // Global variables
 
 
 function setupWebGL() {
@@ -114,10 +118,17 @@ function connectVariablesToGLSL() {
     return;
   }
 
-  // Get the storage location of u_Sampler
+  // Get the storage location of u_Sampler0
   u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
   if (!u_Sampler0) {
     console.log('Failed to get the storage location of u_Sampler0');
+    return false;
+  }
+  
+  // Get the storage location of u_Sampler1
+  u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+  if (!u_Sampler1) {
+    console.log('Failed to get the storage location of u_Sampler1');
     return false;
   }
   
@@ -147,20 +158,31 @@ function addActionsForHTMLUI() {
 
 
 function initTextures(gl, n) {
-  var image = new Image();  // Create the image object
-  if (!image) {
-    console.log('Failed to create the image object');
+  // Create the image objects
+  var image0 = new Image();  // Create the image object for texture 0
+  if (!image0) {
+    console.log('Failed to create the image0 object');
     return false;
   }
-  // Register the event handler to be called on loading an image
-  image.onload = function(){ sendImageToTEXTURE0(image); };
-  // Tell the browser to load an image
-  image.src = 'sky.jpg';
+  var image1 = new Image();  // Create the image object for texture 1
+  if (!image1) {
+    console.log('Failed to create the image1 object');
+    return false;
+  }
 
-  // Add all textures loading
+  // Load all the images for the textures async
+  image0.onload = function () {
+    sendImageToTEXTURE0(image0);
+    image1.onload = function () {
+      sendImageToTEXTURE1(image1);
+    };
+    image1.src = 'pinkflower.jpg';
+  };
+  image0.src = 'sky.jpg';
 
   return true;
 }
+
 
 function sendImageToTEXTURE0(image) {
   var texture = gl.createTexture();   // Create a texture object
@@ -182,12 +204,33 @@ function sendImageToTEXTURE0(image) {
   
   // Set the texture unit 0 to the sampler
   gl.uniform1i(u_Sampler0, 0);
-  
-  // gl.clear(gl.COLOR_BUFFER_BIT);   // Clear <canvas>
-
-  // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n); // Draw the rectangle
 
   console.log("Finished loading the texture for TEXTURE0");
+}
+
+
+function sendImageToTEXTURE1(image) {
+  var texture = gl.createTexture();   // Create a texture object
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+  
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
+  // Enable texture unit1
+  gl.activeTexture(gl.TEXTURE1);
+  // Bind the texture object to the target
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Set the texture parameters
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  // Set the texture image
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+  
+  // Set the texture unit 1 to the sampler
+  gl.uniform1i(u_Sampler1, 1);
+  
+  console.log("Finished loading the texture for TEXTURE1");
 }
 
 
@@ -200,6 +243,9 @@ function main() {
 
   // Set up actions for the HTML UI elements
   addActionsForHTMLUI();
+
+  // Register function (event handler) to be called on a mouse press
+  document.onkeydown = keydown;
 
   // Call the texture helper functions
   initTextures(gl, 0);
@@ -230,7 +276,33 @@ function tick() {
 }
 
 
+function keydown(ev) {
+  if (ev.keyCode === 68) { // Moving right with the "D" key
+    g_eye[0] += 0.2;
+  } else {
+    if (ev.keyCode === 65) { // Moving left with the "A" key
+      g_eye[0] -= 0.2;
+    } else {
+      if (ev.keyCode === 87) { // Moving forward with the "W" key
+        g_eye[2] -= 0.2;
+      } else {
+        if (ev.keyCode === 83) { // Moving backward with the "S" key
+          g_eye[2] += 0.2;
+        }
+      }
+    }
+  }
+
+  renderScene();
+  console.log(ev.keyCode);
+}
+
+// Shape global
 var g_shapesList = [];
+// Camera globals
+var g_eye = [0, 0, 3];
+var g_at = [0, 0, -100];
+var g_up = [0, 1, 0];
 
 
 function renderScene() {
@@ -239,10 +311,13 @@ function renderScene() {
 
   // Pass the projection matrix
   var projMat = new Matrix4();
+  projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 100);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
   
   // Pass the view matrix
   var viewMat = new Matrix4();
+  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]); // (eye, at, up)
+  // viewMat.setLookAt(0, 0, 3, 0, 0, 0, -100, 1, 0); // (eye, at, up)
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
   
   // Pass the matrix to the u_ModelMatrix attribute
@@ -252,6 +327,23 @@ function renderScene() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  // Draw the ground cube
+  var ground = new Cube(); // Creating the ground as a large rectangle
+  ground.color = [0, 1, 0, 1]; // Color the ground green
+  ground.textureNum = -2; // Use the colors on the ground
+  ground.matrix.translate(0, -0.75, 0.0); // Y placement for the ground
+  ground.matrix.scale(10, 0, 10); // Scaling for the ground
+  ground.matrix.translate(-0.5, 0, -0.5); // X and Z placement for the ground
+  ground.render(); // Rendering for the ground
+
+  // Draw the sky cube
+  var sky = new Cube(); // Creating the sky as a large rectangle
+  sky.color = [0, 0, 1, 1]; // Color the sky blue
+  sky.textureNum = 0; // Use the texture0 on the sky
+  sky.matrix.scale(50, 50, 50); // Scaling for the sky
+  sky.matrix.translate(-0.5, -0.5, -0.5); // X, Y, and Z placement for the sky
+  sky.render(); // Rendering for the sky
 
   // Draw the head cube
   var head = new Cube(); // Creating the head as a small rectangle
@@ -269,7 +361,7 @@ function renderScene() {
 
   // Draw the body cube
   var body = new Cube(); // Creating the body as a small rectangle
-  body.textureNum = -1; // Use the debugging UV colors on the body
+  body.textureNum = 1; // Use the texture1 on the body
   body.matrix.translate(-0.25, -0.15, 0.0); // X and Y placements for the body
   body.matrix.scale(0.3, 0.65, 0.65); // Scaling for the body
   body.render(); // Rendering for the body
