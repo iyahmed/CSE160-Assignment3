@@ -24,6 +24,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler0;
   uniform int u_whichTexture;
   void main() {
+      
       if (u_whichTexture == -2) {             // Use color
         gl_FragColor = u_FragColor;
 
@@ -36,7 +37,7 @@ var FSHADER_SOURCE = `
       } else {                                // Error, put Reddish
         gl_FragColor = vec4(1,.2,.2,1);
       }
-  }`;
+  }`
 
 
 let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_whichTexture; // Global variables
@@ -114,14 +115,14 @@ function connectVariablesToGLSL() {
   }
 
   // Get the storage location of u_Sampler
-  var u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+  u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
   if (!u_Sampler0) {
     console.log('Failed to get the storage location of u_Sampler0');
     return false;
   }
   
   // Get the storage location of u_Sampler
-  var u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
+  u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
   if (!u_whichTexture) {
     console.log('Failed to get the storage location of u_whichTexture');
     return false;
@@ -252,21 +253,34 @@ function renderScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // Draw the body cube
-  var body = new Cube(); // Creating the body as a large rectangle
-  body.color = [0.752, 0.752, 0.752, 1]; // Coloring the body silver
-  body.textureNum = 0; // Use the textures on the body
-  body.matrix.translate(-0.25, 0.125, 0.0); // X and Y placements for the body
-  body.matrix.rotate(-5, 1, 0, 0); // Set rotation for the body
-  body.matrix.scale(0.7, 0.5, 0.7); // Scaling for the body
-  body.render(); // Rendering for the body
+  // Draw the head cube
+  var head = new Cube(); // Creating the head as a small rectangle
+  head.textureNum = 0; // Use the texture0 on the head
+  head.matrix.translate(-0.25, 0.5, 0.175); // X, Y, and Z placements for the head
+  head.matrix.scale(0.3, 0.3, 0.3); // Scaling for the head
+  head.render(); // Rendering for the head
  
-  // Ground plane
-  var ground = new Cube();
-  ground.textureNum = -1; // TODO: Use the default UV on the ground
-  ground.matrix.translate(0, 0, -1);
-  ground.matrix.scale(2, .1, 2);
-  ground.render();
+  // Draw the foot cube
+  var foot = new Cube(); // Creating the foot as a small rectangle
+  foot.textureNum = 0; // Use the texture0 on the foot
+  foot.matrix.translate(-0.425, -0.65, 0); // X and Y placements for the foot
+  foot.matrix.scale(.7, .5, .7); // Scaling for the foot
+  foot.render(); // Rendering for the foot
+
+  // Draw the body cube
+  var body = new Cube(); // Creating the body as a small rectangle
+  body.textureNum = -1; // Use the debugging UV colors on the body
+  body.matrix.translate(-0.25, -0.15, 0.0); // X and Y placements for the body
+  body.matrix.scale(0.3, 0.65, 0.65); // Scaling for the body
+  body.render(); // Rendering for the body
+  
+  // Draw the arm cube
+  var arm = new Cube(); // Creating the arm as a small rectangle
+  arm.color = [1, 1, 0, 1]; // Color the arm yellow
+  arm.textureNum = -2; // Use the colors on the arm
+  arm.matrix.translate(-0.15, 0.3, 0); // X and Y placements for the arm
+  arm.matrix.scale(1.15, 0.1, 1.15); // Scaling for the arm
+  arm.render(); // Rendering for the arm
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;
