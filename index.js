@@ -276,51 +276,95 @@ function tick() {
 }
 
 
+// Camera globals
+var g_camera = new Camera();
+var g_eye = g_camera.eye.elements;
+var g_at = g_camera.at.elements;
+var g_up = g_camera.up.elements;
+var yaw = 0;
+
 function keydown(ev) {
   if (ev.keyCode === 68) { // Moving right with the "D" key
-    g_eye[0] += 0.2;
+   g_camera.right();
   } else {
     if (ev.keyCode === 65) { // Moving left with the "A" key
-      g_eye[0] -= 0.2;
+      g_camera.left();
     } else {
       if (ev.keyCode === 87) { // Moving forward with the "W" key
-        g_eye[2] -= 0.2;
+        g_camera.forward();
       } else {
         if (ev.keyCode === 83) { // Moving backward with the "S" key
-          g_eye[2] += 0.2;
+          g_camera.back();
+        } else if (ev.keyCode === 81) { // Turning the camera left with the "Q" key
+          yaw -= 0.2;
+        } else if (ev.keyCode === 69) { // Turing the camera right with the "R" key
+          yaw += 0.2;
         }
       }
     }
   }
 
+  // if (ev.keyCode === 68) { // Moving right with the "D" key
+  //   g_eye[0] += 0.2;
+  // } else {
+  //   if (ev.keyCode === 65) { // Moving left with the "A" key
+  //     g_eye[0] -= 0.2;
+  //   } else {
+  //     if (ev.keyCode === 87) { // Moving forward with the "W" key
+  //       g_eye[2] -= 0.2;
+  //     } else {
+  //       if (ev.keyCode === 83) { // Moving backward with the "S" key
+  //         g_eye[2] += 0.2;
+  //       } else if (ev.keyCode === 81) { // Turning the camera left with the "Q" key
+  //         yaw -= 0.2;
+  //       } else if (ev.keyCode === 69) { // Turing the camera right with the "R" key
+  //         yaw += 0.2;
+  //       }
+  //     }
+  //   }
+  // }
+
   renderScene();
   console.log(ev.keyCode);
 }
 
-// Shape global
+// Render scene global
 var g_shapesList = [];
-// Camera globals
-var g_eye = [0, 0, 3];
-var g_at = [0, 0, -100];
-var g_up = [0, 1, 0];
+var projMat = new Matrix4();
+// g_camera.eye = new Vector3([0, 0, 3]);
+// g_camera.at = new Vector3([0, 0, -100]);
+// g_camera.up = new Vector3([0, 1, 0]);
+// var g_eye = [0, 0, 3]
+// var g_at = [0, 0, -100];
+// var g_up = [0, 1, 0];
 
 
 function renderScene() {
   // Check the time at the start of the function
   var startTime = performance.now();
 
-  // Pass the projection matrix
-  var projMat = new Matrix4();
+  // Pass the projection matrix (not needed in the renderScene())
+  // var projMat = new Matrix4();
+  projMat.setIdentity();
   projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 100);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
   
   // Pass the view matrix
   var viewMat = new Matrix4();
-  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]); // (eye, at, up)
+  viewMat.setLookAt(
+    g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2],
+    g_camera.at.elements[0], g_camera.at.elements[1], g_camera.at.elements[2],
+    g_camera.up.elements[0], g_camera.up.elements[1], g_camera.up.elements[2],
+  );
+  // viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]); // (eye, at, up)
   // viewMat.setLookAt(0, 0, 3, 0, 0, 0, -100, 1, 0); // (eye, at, up)
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
-  
+
   // Pass the matrix to the u_ModelMatrix attribute
+  var cameraRotMat = new Matrix4().rotate(yaw, 0, 1, 0);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, cameraRotMat.elements);
+
+  // Pass the matrix to the u_GlobalRotateMatrix attribute
   var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
@@ -333,7 +377,7 @@ function renderScene() {
   ground.color = [0, 1, 0, 1]; // Color the ground green
   ground.textureNum = -2; // Use the colors on the ground
   ground.matrix.translate(0, -0.75, 0.0); // Y placement for the ground
-  ground.matrix.scale(10, 0, 10); // Scaling for the ground
+  ground.matrix.scale(10, 0.0001, 10); // Scaling for the ground
   ground.matrix.translate(-0.5, 0, -0.5); // X and Z placement for the ground
   ground.render(); // Rendering for the ground
 
@@ -341,7 +385,7 @@ function renderScene() {
   var sky = new Cube(); // Creating the sky as a large rectangle
   sky.color = [0, 0, 1, 1]; // Color the sky blue
   sky.textureNum = 0; // Use the texture0 on the sky
-  sky.matrix.scale(50, 50, 50); // Scaling for the sky
+  sky.matrix.scale(100, 100, 100); // Scaling for the sky
   sky.matrix.translate(-0.5, -0.5, -0.5); // X, Y, and Z placement for the sky
   sky.render(); // Rendering for the sky
 
