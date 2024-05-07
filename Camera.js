@@ -24,19 +24,23 @@ class Camera {
     }
 
     left() { // Using the left direction formula
-        var f = this.eye.sub(this.at);
-        f = f.div(f.magnitude());
-        var s = Vector3.cross(f, this.up);
-        s = s.div(s.magnitude());
-        this.at = this.at.add(s);
-        this.eye = this.eye.add(s);
+        var f = new Vector3();
+        var s = new Vector3();
+        f.set(this.at);
+        f.sub(this.eye);
+        s.set(Vector3.cross(f, this.up));
+        s.normalize();
+        this.at = this.at.sub(s);
+        this.eye = this.eye.sub(s);
     }
 
     right() { // Using the right direction formula
-        var f = this.at.sub(this.eye);
-        f = f.div(f.magnitude());
-        var s = Vector3.cross(f, this.up);
-        s = s.div(s.magnitude());
+        var f = new Vector3();
+        var s = new Vector3();
+        f.set(this.at);
+        f.sub(this.eye);
+        s.set(Vector3.cross(f, this.up));
+        s.normalize();
         this.at = this.at.add(s);
         this.eye = this.eye.add(s);
     }

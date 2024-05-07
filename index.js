@@ -304,26 +304,6 @@ function keydown(ev) {
     }
   }
 
-  // if (ev.keyCode === 68) { // Moving right with the "D" key
-  //   g_eye[0] += 0.2;
-  // } else {
-  //   if (ev.keyCode === 65) { // Moving left with the "A" key
-  //     g_eye[0] -= 0.2;
-  //   } else {
-  //     if (ev.keyCode === 87) { // Moving forward with the "W" key
-  //       g_eye[2] -= 0.2;
-  //     } else {
-  //       if (ev.keyCode === 83) { // Moving backward with the "S" key
-  //         g_eye[2] += 0.2;
-  //       } else if (ev.keyCode === 81) { // Turning the camera left with the "Q" key
-  //         yaw -= 0.2;
-  //       } else if (ev.keyCode === 69) { // Turing the camera right with the "R" key
-  //         yaw += 0.2;
-  //       }
-  //     }
-  //   }
-  // }
-
   renderScene();
   console.log(ev.keyCode);
 }
@@ -331,12 +311,6 @@ function keydown(ev) {
 // Render scene global
 var g_shapesList = [];
 var projMat = new Matrix4();
-// g_camera.eye = new Vector3([0, 0, 3]);
-// g_camera.at = new Vector3([0, 0, -100]);
-// g_camera.up = new Vector3([0, 1, 0]);
-// var g_eye = [0, 0, 3]
-// var g_at = [0, 0, -100];
-// var g_up = [0, 1, 0];
 
 
 function renderScene() {
@@ -355,9 +329,7 @@ function renderScene() {
     g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2],
     g_camera.at.elements[0], g_camera.at.elements[1], g_camera.at.elements[2],
     g_camera.up.elements[0], g_camera.up.elements[1], g_camera.up.elements[2],
-  );
-  // viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]); // (eye, at, up)
-  // viewMat.setLookAt(0, 0, 3, 0, 0, 0, -100, 1, 0); // (eye, at, up)
+  ); // (eye, at, up)
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   // Pass the matrix to the u_ModelMatrix attribute
