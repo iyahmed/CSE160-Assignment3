@@ -44,7 +44,26 @@ var FSHADER_SOURCE = `
   }`
 
 
-let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_Sampler1, u_whichTexture; // Global variables
+// Globals for the WebGL setup
+let canvas, gl, a_Position, a_UV, u_FragColor, u_Size, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_Sampler0, u_Sampler1, u_whichTexture;
+// Global for the global sideways camera angle
+let g_globalAngle = 0;
+// Globals for the performance calculation
+var g_startTime = performance.now() / 1000.0;
+var g_seconds = performance.now() / 1000.0 - g_startTime;
+var fps = 60;
+var fpsDelta = 1000 / fps;
+var previous = performance.now();
+var start;
+// Globals for the perspective camera
+var g_camera = new Camera();
+var g_eye = g_camera.eye.elements;
+var g_at = g_camera.at.elements;
+var g_up = g_camera.up.elements;
+var rotateDelta = -0.2; // In degrees
+// Global for the renderScene() function
+var g_shapesList = [];
+var projMat = new Matrix4();
 
 
 function setupWebGL() {
@@ -143,11 +162,6 @@ function connectVariablesToGLSL() {
   var identityM = new Matrix4();
   gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
 }
-
-
-// Globals related to UI elements
-// Angle's Global
-let g_globalAngle = 0;
 
 
 // Set up actions for the HTMl UI elements
@@ -253,14 +267,12 @@ function main() {
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  // Render
+  // Render scene
+  start = previous;
   renderScene();
   requestAnimationFrame(tick);
 }
 
-
-var g_startTime = performance.now() / 1000.0;
-var g_seconds = performance.now() / 1000.0 - g_startTime;
 
 
 // Called by browser repeatedly whenever its time
@@ -268,20 +280,20 @@ function tick() {
   // Save the current time
   g_seconds = performance.now() / 1000.0 - g_startTime;
 
-  // Draw everything
-  renderScene();
-
   // Tell the browser to update again when it has time
   requestAnimationFrame(tick);
+
+  // Caps the FPS to 60
+  var current = performance.now();
+  var delta = current - previous;
+  if (delta > fpsDelta) {
+    previous = current - (delta % fpsDelta);
+
+    // Draw everything
+    renderScene();
+  }
 }
 
-
-// Camera globals
-var g_camera = new Camera();
-var g_eye = g_camera.eye.elements;
-var g_at = g_camera.at.elements;
-var g_up = g_camera.up.elements;
-var yaw = 0;
 
 function keydown(ev) {
   if (ev.keyCode === 68) { // Moving right with the "D" key
@@ -296,9 +308,9 @@ function keydown(ev) {
         if (ev.keyCode === 83) { // Moving backward with the "S" key
           g_camera.back();
         } else if (ev.keyCode === 81) { // Turning the camera left with the "Q" key
-          yaw -= 0.2;
+          g_camera.panLeft();
         } else if (ev.keyCode === 69) { // Turing the camera right with the "R" key
-          yaw += 0.2;
+          g_camera.panRight();
         }
       }
     }
@@ -308,9 +320,6 @@ function keydown(ev) {
   console.log(ev.keyCode);
 }
 
-// Render scene global
-var g_shapesList = [];
-var projMat = new Matrix4();
 
 
 function renderScene() {
@@ -333,7 +342,7 @@ function renderScene() {
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   // Pass the matrix to the u_ModelMatrix attribute
-  var cameraRotMat = new Matrix4().rotate(yaw, 0, 1, 0);
+  var cameraRotMat = new Matrix4().rotate(rotateDelta, 0, 1, 0);
   gl.uniformMatrix4fv(u_ModelMatrix, false, cameraRotMat.elements);
 
   // Pass the matrix to the u_GlobalRotateMatrix attribute

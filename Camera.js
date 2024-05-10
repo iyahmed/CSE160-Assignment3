@@ -44,4 +44,28 @@ class Camera {
         this.at = this.at.add(s);
         this.eye = this.eye.add(s);
     }
+
+    panLeft() { // Using the left pan rotation formula
+        var f = new Vector3();
+        var f_prime = new Vector3();
+        var rotationMatrix = new Matrix4();
+        f.set(this.at);
+        f.sub(this.eye);
+        rotationMatrix.setRotate(5, this.up.elements[0], this.up.elements[1], this.up.elements[2]); // Panning by +5 degrees
+        f_prime = rotationMatrix.multiplyVector3(f);
+        this.at.set(this.eye);
+        this.at.add(f_prime);
+    }
+
+    panRight() { // Using the right pan rotation formula
+        var f = new Vector3();
+        var f_prime = new Matrix4();
+        var rotationMatrix = new Matrix4();
+        f.set(this.at);
+        f.sub(this.eye);
+        rotationMatrix.setRotate(-5, this.up.elements[0], this.up.elements[1], this.up.elements[2]); // Panning by -5 degrees
+        f_prime = rotationMatrix.multiplyVector3(f);
+        this.at.set(this.eye);
+        this.at.add(f_prime);
+    }
 }
