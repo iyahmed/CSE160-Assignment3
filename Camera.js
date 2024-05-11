@@ -1,8 +1,11 @@
 class Camera {
     constructor() {
         this.eye = new Vector3([0, 0, 3]);
-        this.at = new Vector3([0, 0, -100]);
+        // this.at = new Vector3([0, 0, -100]);
+        // this.at = new Vector3([0, 0, 0]);
+        this.at = new Vector3([-0.25, -0.15, 0.0]); // Centered around the body
         this.up = new Vector3([0, 1, 0]);
+        this.viewMatrix = new Matrix4();
     }
 
     forward() { // Using the forward direction formula
@@ -67,5 +70,51 @@ class Camera {
         f_prime = rotationMatrix.multiplyVector3(f);
         this.at.set(this.eye);
         this.at.add(f_prime);
+    }
+
+    updateCamera(theta, phi) {
+        var radius = 3; // Define radius as length from center (at) to edge of sphere (eye)
+        // var radius = 10; // Define radius as length from center (at) to edge of sphere (eye)
+        // var radius = 7.5; // Define radius as length from center (at) to edge of sphere (eye)
+        // this.eye.elements[0] = this.at.elements[0] + radius * Math.sin(phi) * Math.cos(theta);
+        this.eye.elements[2] = this.at.elements[2] + radius * Math.sin(phi) * Math.cos(theta);
+        // this.eye.elements[1] += radius * Math.cos(phi);
+        // this.eye.elements[1] = this.at.elements[1] + radius * Math.cos(phi);
+        // this.eye.elements[2] = this.at.elements[2] + radius * Math.sin(phi) * Math.sin(theta);
+        this.eye.elements[1] = this.at.elements[1] + radius * Math.sin(phi) * Math.sin(theta);
+        // this.eye.elements[2] = this.at.elements[2] + radius * Math.cos(phi);
+        this.eye.elements[0] = this.at.elements[0] + radius * Math.cos(phi);
+
+        // Make sure up vector is correct
+        /*if (phi > Math.PI) {
+            this.up.elements[1] = -1.0;
+        } else {
+            this.up.elements[1] = 1.0;
+        }*/
+        // this.up.elements[0] = this.at.elements[0] + radius * Math.sin(phi + 0.1) * Math.cos(theta);
+        // this.up.elements[1] = this.at.elements[1] + radius * Math.cos(phi + 0.1);
+        // this.up.elements[2] = this.at.elements[2] + radius * Math.sin(phi + 0.1) * Math.sin(theta);
+        // this.up.normalize();
+        this.up.elements[0] = 0;
+        this.up.elements[1] = 1;
+        this.up.elements[2] = 0;
+
+
+        console.log("EYE[0]", this.eye.elements[0]);
+        console.log("EYE[1]", this.eye.elements[1]);
+        console.log("EYE[2]", this.eye.elements[2]);
+        console.log("AT[0]", this.at.elements[0]);
+        console.log("AT[1]", this.at.elements[1]);
+        console.log("AT[2]", this.at.elements[2]);
+        console.log("UP[0]", this.up.elements[0]);
+        console.log("UP[1]", this.up.elements[1]);
+        console.log("UP[2]", this.up.elements[2]);
+
+        // Update your view matrix here
+        this.viewMatrix.setLookAt(
+            this.eye.elements[0], this.eye.elements[1], this.eye.elements[2],
+            this.at.elements[0], this.at.elements[1], this.at.elements[2],
+            this.up.elements[0], this.up.elements[1], this.up.elements[2],
+        );
     }
 }

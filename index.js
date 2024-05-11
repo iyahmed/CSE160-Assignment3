@@ -261,6 +261,39 @@ function main() {
   // Register function (event handler) to be called on a mouse press
   document.onkeydown = keydown;
 
+  // For mouse movements
+  // Mouse movement constants
+  let dragging = false;
+  let lastX = -1;
+  let lastY = -1;
+  let theta = 0;
+  let phi = 0;
+  // Dragging the mouse
+  canvas.addEventListener('mousedown', (event) => {
+    dragging = true;
+    lastX = event.clientX;
+    lastY = event.clientY;
+  });
+  // Letting go of the mouse
+  canvas.addEventListener('mouseup', () => {
+    dragging = false;
+  })
+  // Moving the mouse
+  canvas.addEventListener('mousemove', (event) => {
+    if (dragging) {
+      const deltaX = event.clientX - lastX;
+      const deltaY = event.clientY - lastY;
+      theta += deltaX * 0.005; // Mouse sensitivity
+      phi += deltaY * 0.005; // Mouse sensitivity
+
+      g_camera.updateCamera(theta, phi);
+      gl.uniformMatrix4fv(u_ViewMatrix, false, g_camera.viewMatrix.elements);
+      // renderScene();
+    }
+    lastX = event.clientX;
+    lastY = event.clientY;
+  });
+
   // Call the texture helper functions
   initTextures(gl, 0);
 
