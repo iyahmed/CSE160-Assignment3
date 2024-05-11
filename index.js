@@ -64,6 +64,28 @@ var rotateDelta = -0.2; // In degrees
 // Global for the renderScene() function
 var g_shapesList = [];
 var projMat = new Matrix4();
+// Global for map walls
+// var g_map = [
+//   [1, 1, 1, 1, 1, 1, 1, 1],
+//   [1, 0, 0, 0, 0, 0, 0, 1],
+//   [1, 0, 0, 0, 0, 0, 0, 1],
+//   [1, 0, 0, 1, 1, 0, 0, 1],
+//   [1, 0, 0, 0, 0, 0, 0, 1],
+//   [1, 0, 0, 0, 0, 0, 0, 1],
+//   [1, 0, 0, 0, 1, 0, 0, 1],
+//   [1, 0, 0, 0, 0, 0, 0, 1],
+  
+    // Adding these values will cause lag
+//   [1, 0, 1, 0, 1, 0, 1, 1],
+//   [1, 0, 0, 1, 1, 1, 0, 1],
+//   [1, 1, 1, 0, 0, 0, 0, 1],
+//   [1, 0, 0, 1, 1, 0, 0, 1],
+//   [1, 0, 0, 0, 0, 1, 1, 1],
+//   [1, 1, 0, 0, 0, 0, 1, 1],
+//   [0, 0, 0, 1, 1, 0, 0, 0],
+//   [1, 0, 0, 1, 1, 0, 0, 1],
+
+// ];
 
 
 function setupWebGL() {
@@ -267,7 +289,7 @@ function main() {
   let lastX = -1;
   let lastY = -1;
   let theta = 0;
-  let phi = 0;
+  let phi = Math.PI / 2; // Default value avoids the viewpoint jumping to the top by default
   // Dragging the mouse
   canvas.addEventListener('mousedown', (event) => {
     dragging = true;
@@ -283,8 +305,8 @@ function main() {
     if (dragging) {
       const deltaX = event.clientX - lastX;
       const deltaY = event.clientY - lastY;
-      theta += deltaX * 0.005; // Mouse sensitivity
-      phi += deltaY * 0.005; // Mouse sensitivity
+      theta -= deltaX * 0.005; // Mouse sensitivity
+      phi -= deltaY * 0.005; // Mouse sensitivity
 
       g_camera.updateCamera(theta, phi);
       gl.uniformMatrix4fv(u_ViewMatrix, false, g_camera.viewMatrix.elements);
@@ -354,6 +376,40 @@ function keydown(ev) {
 }
 
 
+function drawMap() { // TODO: Extend this to 32 x 32
+  // Double loop for initial map wall draw
+  // TODO: Add collision detection by preventing the camera from moving where there is a wall
+  var body = new Cube();
+  body.textureNum = -2;
+  body.color = [0.8, 1, 1, 1];
+  body.matrix.translate(0, -0.75, 0);
+  body.matrix.scale(0.3, 0.3, 0.3);
+  for (x = 0; x < 8; x++) {
+    for (z = 0; z < 8; z++) {
+      // console.log("MAP X: ", x);
+      // console.log("MAP Z: ", z);
+
+      if (x * z >= 8) {
+        body.matrix.translate(x % 4, 0, z % 4);
+      } else {
+        body.matrix.translate(-x % 4, 0, -z % 4);
+      }
+      body.renderfaster(); // TODO: Fix Cube.renderfast() and Cube.reanderfaster()
+      // if (g_map[x][y] === 1) {
+      // if (x < 1 || x === 31 || y === 0 || y === 31) {
+        // body.textureNum = -2;
+        // // body.color = [1, 1, 1, 1];
+        // // body.matrix.translate(x - 4, -0.75, y - 4);
+        // body.color = [0.8, 1, 1, 1];
+        // body.matrix.translate(0, -0.75, 0);
+        // body.matrix.scale(0.3, 0.3, 0.3);
+        // body.matrix.translate(x - 16, 0, y - 16);
+        // body.render();
+      // }
+    }
+  }
+}
+
 
 function renderScene() {
   // Check the time at the start of the function
@@ -385,13 +441,16 @@ function renderScene() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  
+ 
+  // Draw the map's wall cubes
+  drawMap();
+
   // Draw the ground cube
   var ground = new Cube(); // Creating the ground as a large rectangle
   ground.color = [0, 1, 0, 1]; // Color the ground green
   ground.textureNum = -2; // Use the colors on the ground
   ground.matrix.translate(0, -0.75, 0.0); // Y placement for the ground
-  ground.matrix.scale(10, 0.0001, 10); // Scaling for the ground
+  ground.matrix.scale(32, 0.0001, 32); // Scaling for the ground
   ground.matrix.translate(-0.5, 0, -0.5); // X and Z placement for the ground
   ground.render(); // Rendering for the ground
 
