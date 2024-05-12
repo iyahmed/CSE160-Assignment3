@@ -18,6 +18,7 @@ class Cube {
             0, 0, 1,  1, 1, 1,  1, 0, 1,
             0, 0, 1,  0, 1, 1,  1, 1, 1
         ]);
+        this.vertexBuffer = null;
         // this.cubeVerts = [
         //     0, 0, 0,  1, 1, 0,  1, 0, 0,
         //     0, 0, 0,  0, 1, 0,  1, 1, 0,
@@ -73,7 +74,7 @@ class Cube {
         drawTriangle3DUV([1, 0, 0, 1, 1, 0, 1, 1, 1], [1,0,0,1,1,1]);
         drawTriangle3DUV([1, 1, 1, 1, 0, 1, 1, 0, 0], [0,0,0,1,1,1]);
     }
-    renderfast() {
+    renderfast() { // TODO: Fix this function
         var rgba = this.color;
 
         // Pass the texture number for colors
@@ -119,38 +120,36 @@ class Cube {
     }
 
     renderfaster() {
-        var rgba = this.color;
-
-        // Create a buffer object
-        g_vertexBuffer = gl.createBuffer();
-        if (!g_vertexBuffer) {
-            console.log('Failed to create the buffer object');
-            return -1;
-        }
-
-        // Bind the buffer object to target
-        gl.bindBuffer(gl.ARRAY_BUFFER, g_vertexBuffer);
-
-        // Initialize the buffer with empty data
-        gl.bufferData(gl.ARRAY_BUFFER, 1, gl.DYNAMIC_DRAW);
-
-        // Assign the buffer object to a_Position variable
-        gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
-
-        // Enable the assignment to a_Position variable
-        gl.enableVertexAttribArray(a_Position);
-
         // Pass the texture number
         gl.uniform1i(u_whichTexture, -2);
 
         // Pass the color of a point to u_FragColor variable
+        var rgba = this.color;
         gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
+        
+        // Initialize the buffer with the vertices
+        gl.bufferData(gl.ARRAY_BUFFER, this.cubeVerts32, gl.DYNAMIC_DRAW);
+
+        // Create a buffer object
+        this.vertexBuffer = gl.createBuffer();
+        if (this.vertexBuffer === null) {
+            console.log('Failed to create the buffer object');
+            // Bind the buffer object to target
+            gl.bindBuffer(gl.ARRAY_BUFFER, g_vertexBuffer);
+        }
+
+
+        // Enable the assignment to a_Position variable
+        gl.enableVertexAttribArray(a_Position);
+        
+        // Assign the buffer object to a_Position variable
+        gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+
 
         // Pass the matrix to u_ModelMatrix attribute
         gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
 
         // Draw the 12 triangles that make up a cube
-        gl.bufferData(gl.ARRAY_BUFFER, this.cubeVerts32, gl.DYNAMIC_DRAW);
         gl.drawArrays(gl.TRIANGLES, 0, 36);
     }
 }
