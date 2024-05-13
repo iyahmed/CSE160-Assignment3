@@ -1,8 +1,6 @@
 class Camera {
     constructor() {
         this.eye = new Vector3([0, 0, 3]);
-        // this.at = new Vector3([0, 0, -100]);
-        // this.at = new Vector3([0, 0, 0]);
         this.at = new Vector3([-0.25, -0.15, 0.0]); // Centered around the body
         this.up = new Vector3([0, 1, 0]);
         this.viewMatrix = new Matrix4();

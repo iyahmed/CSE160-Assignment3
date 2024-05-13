@@ -65,7 +65,7 @@ var rotateDelta = -0.2; // In degrees
 var g_shapesList = [];
 var projMat = new Matrix4();
 // Global for map walls
-var g_map = [
+var g_path = [
   // For 32 x 32
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -132,25 +132,9 @@ var g_map = [
    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
   [0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1,
    0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0],
-// For 8 x 8
-//   [1, 1, 1, 1, 1, 1, 1, 1],
-//   [1, 0, 0, 0, 0, 0, 0, 1],
-//   [1, 0, 0, 0, 0, 0, 0, 1],
-//   [1, 0, 0, 1, 1, 0, 0, 1],
-//   [1, 0, 0, 0, 0, 0, 0, 1],
-//   [1, 0, 0, 0, 0, 0, 0, 1],
-//   [1, 0, 0, 0, 1, 0, 0, 1],
-//   [1, 0, 0, 0, 0, 0, 0, 1],
-// Adding these values will cause lag
-//   [1, 0, 1, 0, 1, 0, 1, 1],
-//   [1, 0, 0, 1, 1, 1, 0, 1],
-//   [1, 1, 1, 0, 0, 0, 0, 1],
-//   [1, 0, 0, 1, 1, 0, 0, 1],
-//   [1, 0, 0, 0, 0, 1, 1, 1],
-//   [1, 1, 0, 0, 0, 0, 1, 1],
-//   [0, 0, 0, 1, 1, 0, 0, 0],
-//   [1, 0, 0, 1, 1, 0, 0, 1],
 ];
+let perlinNoise = initPerlinNoise();
+let perlinHeights = [];
 
 
 function setupWebGL() {
@@ -388,6 +372,7 @@ function main() {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
   // Render scene
+  initPerlinTerrainHeight();
   start = previous;
   renderScene();
   requestAnimationFrame(tick);
@@ -441,39 +426,102 @@ function keydown(ev) {
 }
 
 
+function initPerlinNoise() { // Generate the given Perlin height of terrian
+  // Initialize important values
+  let gradients = {};
+  let cache = {};
+
+  function dotProductGrid(x, y, ax, ay) { // Internal function for setting up the grid for the dot products
+    let dx = x - ax;
+    let dy = y - ay;
+    var grad;
+    var angle;
+    if (gradients[[ax, ay]]) { // If the gradient exists, use it. Otherwise, pseudorandomize it
+      grad = gradients[[ax, ay]];
+    } else {
+      angle = Math.random() * Math.PI * 2; // In degrees
+      grad = { x: Math.cos(angle), y: Math.sin(angle) };
+      gradients[[ax, ay]] = grad;
+    }
+
+    return grad.x * dx + grad.y * dy;
+  }
+
+  function smoothStep(t) { // Internal function for calculating a smooth step
+    return (3 - 2 * t) * t * t;
+  }
+
+  function perlin(x, y) { // Internal function for calculating Perlin noise
+    let xf = Math.floor(x);
+    let yf = Math.floor(y);
+    let tl = dotProductGrid(x, y, xf, yf);
+    let tr = dotProductGrid(x, y, xf + 1, yf);
+    let bl = dotProductGrid(x, y, xf, yf + 1);
+    let br = dotProductGrid(x, y, xf + 1, yf + 1);
+    let xt = smoothStep(x - xf);
+    let yt = smoothStep(y - yf);
+    let top = xt * (tr - tl) + tl;
+    let bottom = xt * (br - bl) + bl;
+    return yt * (bottom - top) + top;
+  }
+
+  return { noise: perlin };
+}
+
+
+function initPerlinTerrainHeight() { // Calculates and stores the height of render Perlin terrain 
+  for (let x = 0; x < 32; x++) {
+    perlinHeights[x] = [];
+    for (let z = 0; z < 32; z++) {
+      perlinHeights[x][z] = perlinNoise.noise(x, z); // Perlin terrain height
+    }
+  }
+}
+
+
 function drawMap() { // TODO: Extend this to 32 x 32
   // Double loop for initial map wall draw
   // TODO: Add collision detection by preventing the camera from moving where there is a wall
-  var body = new Cube();
-  body.textureNum = -2;
-  body.color = [0.8, 1, 1, 1];
-  body.matrix.translate(0, -0.75, 0);
-  body.matrix.scale(0.3, 0.3, 0.3);
+  // Values for the pathway
+  var path = new Cube();
+  path.textureNum = -2;
+  path.color = [0.8, 1, 1, 1];
+  path.matrix.translate(0, -0.75, 0);
+  path.matrix.scale(0.3, 0.3, 0.3);
+
+  // Object for Perlin noise to generate the map
+  let perlin = new Cube();
+  perlin.matrix.setIdentity();
+  perlin.textureNum = -2;
+  perlin.color = [1, 0, 0, 1];
+
+  // Values for the Perlin noise
+  const terrainSize = 32; // To fit the 32 x 32 requirements
+  const maximumHeight = 10; // This is the maximum height of the terrian
   for (x = 0; x < 32; x++) {
     for (z = 0; z < 32; z++) {
-      // console.log("MAP X: ", x);
-      // console.log("MAP Z: ", z);
-
-      if (g_map[x][z] === 1) {
+      // For the stairway path
+      if (g_path[x][z] === 1) { // For the stairway path
         if (x >= 16 && z >= 16) {
-          body.matrix.translate(x % 1.25, 0.05, z % 1.25);
+          path.matrix.translate(x % 1.25, 0.05, z % 1.25);
         } else {
-          body.matrix.translate(-x % 1.25, 0.05, -z % 1.25);
+          path.matrix.translate(-x % 1.25, 0.05, -z % 1.25);
         }
+        path.renderfaster(); // TODO: Fix Cube.renderfast() // TODO: Fix Cube.renderfast()
+
+       // Calculating world coordinates
+        let worldX = (x - (terrainSize / 2)) * 1.0;
+        let worldZ = (z - (terrainSize / 2)) * 1.0;
+        
+        for (let y = 0; y <= perlinHeights[x][z]; y++) {
+          let worldY = y - (maximumHeight / 2) + 5;
+          perlin.matrix.translate(worldX, worldY, worldZ);
+          perlin.matrix.scale(2, 2, 2);
+          // perlin.matrix.translate(x - offset, y - maximumPerlinHeight / 2, z - offset);
+          // perlin.matrix.scale(2.5, 2.5, 2.5);
+          perlin.renderfaster();
+        }  
       }
-
-      // if (x * z >= 32) {
-      //   body.matrix.translate(x % 128, 0, z % 128);
-      // } else {
-      //   body.matrix.translate(-x % 128, 0, -z % 128);
-      // }
-
-      // if (x * z >= 8) { // For 8 x 8
-      //   body.matrix.translate(x % 4, 0, z % 4);
-      // } else {
-      //   body.matrix.translate(-x % 4, 0, -z % 4);
-      // }
-      body.renderfaster(); // TODO: Fix Cube.renderfast()
     }
   }
 }
@@ -486,7 +534,8 @@ function renderScene() {
   // Pass the projection matrix (not needed in the renderScene())
   // var projMat = new Matrix4();
   projMat.setIdentity();
-  projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 100);
+  projMat.setPerspective(60, 1 * canvas.width / canvas.height, 1, 1024);
+  // projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 100);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
   
   // Pass the view matrix
@@ -513,20 +562,20 @@ function renderScene() {
   // Draw the map's wall cubes
   drawMap();
 
-  // Draw the ground cube
+  // Draw the ground cube for 32 x 32
   var ground = new Cube(); // Creating the ground as a large rectangle
   ground.color = [0, 1, 0, 1]; // Color the ground green
   ground.textureNum = -2; // Use the colors on the ground
   ground.matrix.translate(0, -0.75, 0.0); // Y placement for the ground
-  ground.matrix.scale(32, 0.0001, 32); // Scaling for the ground
+  ground.matrix.scale(1024, 0.0001, 1024); // Scaling for the ground
   ground.matrix.translate(-0.5, 0, -0.5); // X and Z placement for the ground
   ground.render(); // Rendering for the ground
 
-  // Draw the sky cube
+  // Draw the sky cube for 32 x 32
   var sky = new Cube(); // Creating the sky as a large rectangle
   sky.color = [0, 0, 1, 1]; // Color the sky blue
   sky.textureNum = 0; // Use the texture0 on the sky
-  sky.matrix.scale(100, 100, 100); // Scaling for the sky
+  sky.matrix.scale(1024, 1024, 1024); // Scaling for the sky
   sky.matrix.translate(-0.5, -0.5, -0.5); // X, Y, and Z placement for the sky
   sky.render(); // Rendering for the sky
 
