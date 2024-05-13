@@ -135,6 +135,31 @@ var g_path = [
 ];
 let perlinNoise = initPerlinNoise();
 let perlinHeights = [];
+// Globals related to my Blocky Animal
+// Front-Left Leg's Globals
+let g_frontLeftLegThighAngle = 0;
+let g_frontLeftLegPawAngle = 0;
+let g_frontLeftLegThighAnimation = false;
+let g_frontLeftLegPawAnimation = false;
+// Front-Right Leg's Globals
+let g_frontRightLegThighAngle = 0;
+let g_frontRightLegPawAngle = 0;
+let g_frontRightLegThighAnimation = false;
+let g_frontRightLegPawAnimation = false;
+// Back-Left Leg's Globals
+let g_backLeftLegThighAngle = 0;
+let g_backLeftLegPawAngle = 0;
+let g_backLeftLegThighAnimation = false;
+let g_backLeftLegPawAnimation = false;
+// Back-Right Leg's Globals
+let g_backRightLegThighAngle = 0;
+let g_backRightLegPawAngle = 0;
+let g_backRightLegThighAnimation = false;
+let g_backRightLegPawAnimation = false;
+// Bottom Tail's Globals
+let g_tailAngle = 0;
+let g_tailAnimation = false;
+
 
 
 function setupWebGL() {
@@ -237,6 +262,54 @@ function connectVariablesToGLSL() {
 
 // Set up actions for the HTMl UI elements
 function addActionsForHTMLUI() {
+  // Front-Left Leg's Button Events
+  document.getElementById('animationfrontLeftLegThighOffButton').onclick = function () { g_frontLeftLegThighAnimation = false; };
+  document.getElementById('animationfrontLeftLegThighOnButton').onclick = function () { g_frontLeftLegThighAnimation = true; };
+  document.getElementById('animationfrontLeftLegPawOffButton').onclick = function () { g_frontLeftLegPawAnimation = false; };
+  document.getElementById('animationfrontLeftLegPawOnButton').onclick = function () { g_frontLeftLegPawAnimation = true; };
+
+  // Front-Right Leg's Button Events
+  document.getElementById('animationfrontRightLegThighOffButton').onclick = function () { g_frontRightLegThighAnimation = false; };
+  document.getElementById('animationfrontRightLegThighOnButton').onclick = function () { g_frontRightLegThighAnimation = true; };
+  document.getElementById('animationfrontRightLegPawOffButton').onclick = function () { g_frontRightLegPawAnimation = false; };
+  document.getElementById('animationfrontRightLegPawOnButton').onclick = function () { g_frontRightLegPawAnimation = true; };
+  document.getElementById('animationfrontLeftLegThighOffButton').onclick = function () { g_frontLeftLegThighAnimation = false; };
+
+  // Back-Left Leg's Button Events
+  document.getElementById('animationbackLeftLegThighOnButton').onclick = function () { g_backLeftLegThighAnimation = true; };
+  document.getElementById('animationbackLeftLegThighOffButton').onclick = function () { g_backLeftLegThighAnimation = false; };
+  document.getElementById('animationbackLeftLegPawOffButton').onclick = function () { g_backLeftLegPawAnimation = false; };
+  document.getElementById('animationbackLeftLegPawOnButton').onclick = function () { g_backLeftLegPawAnimation = true; };
+
+  // Back-Right Leg's Button Events
+  document.getElementById('animationbackRightLegThighOffButton').onclick = function () { g_backRightLegThighAnimation = false; };
+  document.getElementById('animationbackRightLegThighOnButton').onclick = function () { g_backRightLegThighAnimation = true; };
+  document.getElementById('animationbackRightLegPawOffButton').onclick = function () { g_backRightLegPawAnimation = false; };
+  document.getElementById('animationbackRightLegPawOnButton').onclick = function () { g_backRightLegPawAnimation = true; };
+  
+  // Tail's Button Events
+  document.getElementById('animationTailOffButton').onclick = function () { g_tailAnimation = false; };
+  document.getElementById('animationTailOnButton').onclick = function () { g_tailAnimation = true; };
+  
+  // Front-Left Leg's Color Slider Events
+  document.getElementById('frontLeftLegPawSlide').addEventListener('mousemove', function () { g_frontLeftLegPawAngle = this.value; renderScene(); });
+  document.getElementById('frontLeftLegThighSlide').addEventListener('mousemove', function () { g_frontLeftLegThighAngle = this.value; renderScene(); });
+  
+  // Front-Right Leg's Color Slider Events
+  document.getElementById('frontRightLegPawSlide').addEventListener('mousemove', function () { g_frontRightLegPawAngle = this.value; renderScene(); });
+  document.getElementById('frontRightLegThighSlide').addEventListener('mousemove', function () { g_frontRightLegThighAngle = this.value; renderScene(); });
+
+  // Back-Left Leg's Color Slider Events
+  document.getElementById('backLeftLegPawSlide').addEventListener('mousemove', function () { g_backLeftLegPawAngle = this.value; renderScene(); });
+  document.getElementById('backLeftLegThighSlide').addEventListener('mousemove', function () { g_backLeftLegThighAngle = this.value; renderScene(); });
+
+  // Back-Right Leg's Color Slider Events
+  document.getElementById('backRightLegPawSlide').addEventListener('mousemove', function () { g_backRightLegPawAngle = this.value; renderScene(); });
+  document.getElementById('backRightLegThighSlide').addEventListener('mousemove', function () { g_backRightLegThighAngle = this.value; renderScene(); });
+  
+  // Tail's Color Slider Events
+  document.getElementById('tailSlide').addEventListener('mousemove', function () { g_TailAngle = this.value; renderScene(); });
+
   // Angle Slider Events
   document.getElementById('angleSlide').addEventListener('mousemove', function () { g_globalAngle = this.value; renderScene(); });
 }
@@ -385,6 +458,9 @@ function tick() {
   // Save the current time
   g_seconds = performance.now() / 1000.0 - g_startTime;
 
+  // Update Animation Angles
+  updateAnimationAngles();
+
   // Tell the browser to update again when it has time
   requestAnimationFrame(tick);
 
@@ -397,6 +473,66 @@ function tick() {
     // Draw everything
     renderScene();
   }
+}
+
+
+// Update the angles of everything if currently animated
+function updateAnimationAngles() {
+  // Delaying movement of the right legs compared to the left legs for realism
+  if (g_frontLeftLegThighAnimation === true) {
+    g_frontLeftLegThighAngle = (30 * Math.sin(g_seconds));
+  }
+  if (g_frontLeftLegThighAnimation === false) {
+    g_frontLeftLegThighAngle = 0;
+  }
+  if (g_frontLeftLegPawAnimation === true) {
+    g_frontLeftLegPawAngle = (30 * Math.sin(3 * g_seconds));
+  }
+  if (g_frontLeftLegPawAnimation === false) {
+    g_frontLeftLegPawAngle = 0;
+  }
+  if (g_frontRightLegThighAnimation === true) {
+    g_frontRightLegThighAngle = (30 * Math.cos(g_seconds));
+  }
+  if (g_frontRightLegThighAnimation === false) {
+    g_frontRightLegThighAngle = 0;
+  }
+  if (g_frontRightLegPawAnimation === true) {
+    g_frontRightLegPawAngle = (30 * Math.cos(3 * g_seconds));
+  }
+  if (g_frontRightLegPawAnimation === false) {
+    g_frontRightLegPawAngle = 0;
+  }
+  if (g_backLeftLegThighAnimation === true) {
+    g_backLeftLegThighAngle = (30 * Math.sin(g_seconds));
+  }
+  if (g_backLeftLegThighAnimation === false) {
+    g_backLeftLegThighAngle = 0;
+  }
+  if (g_backLeftLegPawAnimation === true) {
+    g_backLeftLegPawAngle = (30 * Math.sin(3 * g_seconds));
+  }
+  if (g_backLeftLegPawAnimation === false) {
+    g_backLeftLegPawAngle = 0;
+  }
+  if (g_backRightLegThighAnimation === true) {
+    g_backRightLegThighAngle = (30 * Math.cos(g_seconds));
+  }
+  if (g_backRightLegThighAnimation === false) {
+    g_backRightLegThighAngle = 0;
+  }
+  if (g_backRightLegPawAnimation === true) {
+    g_backRightLegPawAngle = (30 * Math.cos(3 * g_seconds));
+  }
+  if (g_backRightLegPawAnimation === false) {
+    g_backRightLegPawAngle = 0;
+  }
+  if (g_tailAnimation === true) {
+    g_tailAngle = (60 * Math.cos(g_seconds)); // The speed of tail-wagging is doubled compared to the speed of walking with a leg for realism
+  }
+  if (g_tailAnimation === false) {
+    g_tailAngle = 0;
+  }  
 }
 
 
@@ -534,8 +670,7 @@ function renderScene() {
   // Pass the projection matrix (not needed in the renderScene())
   // var projMat = new Matrix4();
   projMat.setIdentity();
-  projMat.setPerspective(60, 1 * canvas.width / canvas.height, 1, 1024);
-  // projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 100);
+  projMat.setPerspective(50, 1 * canvas.width / canvas.height, 1, 200);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
   
   // Pass the view matrix
@@ -567,46 +702,185 @@ function renderScene() {
   ground.color = [0, 1, 0, 1]; // Color the ground green
   ground.textureNum = -2; // Use the colors on the ground
   ground.matrix.translate(0, -0.75, 0.0); // Y placement for the ground
-  ground.matrix.scale(1024, 0.0001, 1024); // Scaling for the ground
+  ground.matrix.scale(32, 0.0001, 32); // Scaling for the ground
   ground.matrix.translate(-0.5, 0, -0.5); // X and Z placement for the ground
   ground.render(); // Rendering for the ground
 
-  // Draw the sky cube for 32 x 32
+  // Draw the sky cube for 100 x 100
   var sky = new Cube(); // Creating the sky as a large rectangle
   sky.color = [0, 0, 1, 1]; // Color the sky blue
   sky.textureNum = 0; // Use the texture0 on the sky
-  sky.matrix.scale(1024, 1024, 1024); // Scaling for the sky
+  sky.matrix.scale(100, 100, 100); // Scaling for the sky
   sky.matrix.translate(-0.5, -0.5, -0.5); // X, Y, and Z placement for the sky
   sky.render(); // Rendering for the sky
 
-  // Draw the head cube
-  var head = new Cube(); // Creating the head as a small rectangle
-  head.textureNum = 0; // Use the texture0 on the head
-  head.matrix.translate(-0.25, 0.5, 0.175); // X, Y, and Z placements for the head
-  head.matrix.scale(0.3, 0.3, 0.3); // Scaling for the head
-  head.render(); // Rendering for the head
+  // Draw the statue's head cube
+  var statueHead = new Cube(); // Creating the head as a small rectangle
+  statueHead.textureNum = 0; // Use the texture0 on the head
+  statueHead.matrix.translate(-0.25, 0.5, 0.175); // X, Y, and Z placements for the head
+  statueHead.matrix.scale(0.3, 0.3, 0.3); // Scaling for the head
+  statueHead.render(); // Rendering for the head
  
-  // Draw the foot cube
-  var foot = new Cube(); // Creating the foot as a small rectangle
-  foot.textureNum = 0; // Use the texture0 on the foot
-  foot.matrix.translate(-0.425, -0.65, 0); // X and Y placements for the foot
-  foot.matrix.scale(.7, .5, .7); // Scaling for the foot
-  foot.render(); // Rendering for the foot
+  // Draw the statue's foot cube
+  var statueFoot = new Cube(); // Creating the foot as a small rectangle
+  statueFoot.textureNum = 0; // Use the texture0 on the foot
+  statueFoot.matrix.translate(-0.425, -0.65, 0); // X and Y placements for the foot
+  statueFoot.matrix.scale(.7, .5, .7); // Scaling for the foot
+  statueFoot.render(); // Rendering for the foot
+
+  // Draw the statue's body cube
+  var statueBody = new Cube(); // Creating the body as a small rectangle
+  statueBody.textureNum = 1; // Use the texture1 on the body
+  statueBody.matrix.translate(-0.25, -0.15, 0.0); // X and Y placements for the body
+  statueBody.matrix.scale(0.3, 0.65, 0.65); // Scaling for the body
+  statueBody.render(); // Rendering for the body
+  
+  // Draw the statue's arm cube
+  var statueArm = new Cube(); // Creating the arm as a small rectangle
+  statueArm.textureNum = -2; // Use the colors on the arm
+  statueArm.color = [1, 1, 0, 1]; // Color the arm yellow
+  statueArm.matrix.translate(-0.15, 0.3, 0); // X and Y placements for the arm
+  statueArm.matrix.scale(1.15, 0.1, 1.15); // Scaling for the arm
+  statueArm.render(); // Rendering for the arm
 
   // Draw the body cube
-  var body = new Cube(); // Creating the body as a small rectangle
-  body.textureNum = 1; // Use the texture1 on the body
-  body.matrix.translate(-0.25, -0.15, 0.0); // X and Y placements for the body
-  body.matrix.scale(0.3, 0.65, 0.65); // Scaling for the body
+  var body = new Cube(); // Creating the body as a large rectangle
+  body.textureNum = -2; // Use the colors on the body
+  body.color = [0.752, 0.752, 0.752, 1]; // Coloring the body silver
+  body.matrix.translate(-0.25 + 0.5, -0.025 + 0.85, 0.0); // X and Y placements for the body
+  // body.matrix.translate(-0.25 - 24, -0.025 + 4.5, 0 - 24); // X and Y placements for the body
+  body.matrix.rotate(-5, 1, 0, 0); // Set rotation for the body
+  body.matrix.scale(0.7, 0.5, 0.7); // Scaling for the body
   body.render(); // Rendering for the body
-  
-  // Draw the arm cube
-  var arm = new Cube(); // Creating the arm as a small rectangle
-  arm.color = [1, 1, 0, 1]; // Color the arm yellow
-  arm.textureNum = -2; // Use the colors on the arm
-  arm.matrix.translate(-0.15, 0.3, 0); // X and Y placements for the arm
-  arm.matrix.scale(1.15, 0.1, 1.15); // Scaling for the arm
-  arm.render(); // Rendering for the arm
+
+  // Draw a front-left leg's thigh
+  var frontLeftLegThigh = new Cube(); // Creating the front-left leg's thigh as a small rectangle
+  frontLeftLegThigh.textureNum = -2; // Use the colors on the front-left leg's thigh
+  frontLeftLegThigh.color = [0.662, 0.662, 0.662, 1]; // Coloring it dark gray
+  frontLeftLegThigh.matrix.setTranslate(-0.12 + 0.5, 0 + 0.85, 0.0); // X, Y, and Z placement for the whole front-left leg
+  // frontLeftLegThigh.matrix.setTranslate(-0.12 - 25, 0 + 5, 0 - 25); // X, Y, and Z placement for the whole front-left leg
+  frontLeftLegThigh.matrix.rotate(-5, 1, 0, 0); // Rotation for the whole front-left leg
+  frontLeftLegThigh.matrix.rotate(-g_frontLeftLegThighAngle, 0, 0); // Setting the animation rotation for the whole front-left leg
+  frontLeftLegThigh.matrix.scale(0.5, -0.5, 0.5); // Flipping the whole front-left leg vertically and scaling it by 1/2th
+  var frontLeftLegThighCoordinatesMat = new Matrix4(frontLeftLegThigh.matrix); // Setting the coordinate system for the whole left leg to be the front-left leg's thigh
+  frontLeftLegThigh.matrix.scale(0.25, 0.75, 0.25); // Setting the custom 1/4th, 3/4th, 1/4th scale for the front-left leg's thigh
+  frontLeftLegThigh.matrix.translate(-0.5, 0, 0); // Setting the custom X placement for the front-left leg's thigh
+  frontLeftLegThigh.render(); // Rendering the front-left leg's thigh
+
+  // Draw a front-left leg's paw
+  var frontLeftLegPaw = new Cube(); // Creating the front-left leg's paw as a small rectangle
+  frontLeftLegPaw.textureNum = -2; // Use the colors on the front-left leg's paw
+  frontLeftLegPaw.color = [0.5, 0.25, 0.1, 1]; // Coloring the front-left leg's paw as brown because black would be too hard to see
+  frontLeftLegPaw.matrix = frontLeftLegThighCoordinatesMat; // Setting the coordinate system for the whole front-left leg to be the front-left leg's thigh
+  frontLeftLegPaw.matrix.translate(0, 0.65, 0); // Setting the custom Y placement for the front-left leg's paw
+  frontLeftLegPaw.matrix.rotate(-g_frontLeftLegPawAngle, 0, 0, 1); // Setting the animation rotation for the whole front-left leg
+  frontLeftLegPaw.matrix.scale(0.20, 0.25, 0.20); // Setting the custom 1/5th, 1/4th, 1/5th scale for the front-left leg's paw
+  frontLeftLegPaw.matrix.translate(-0.5, 0.45, -0.001); // Setting the custom X, Y, and Z (to avoid z-buffering) placement for the front-left leg's paw
+  frontLeftLegPaw.render(); // Rendering the front-left leg's paw
+
+  // Draw a front-right leg's thigh
+  var frontRightLegThigh = new Cube(); // Creating the front-right leg's thigh as a small rectangle
+  frontRightLegThigh.textureNum = -2; // Use the colors on the front-right leg's thigh
+  frontRightLegThigh.color = [0.662, 0.662, 0.662, 1]; // Coloring it dark gray
+  frontRightLegThigh.matrix.setTranslate(-0.12 + 0.5, 0 + 0.85, 0.5); // X, Y, and Z placement for the whole front-right leg
+  // frontRightLegThigh.matrix.setTranslate(-0.12 - 24.5, 0 + 4.5, 0.5 - 24.5); // X, Y, and Z placement for the whole front-right leg
+  frontRightLegThigh.matrix.rotate(-5, 1, 0, 0); // Rotation for the whole left leg
+  frontRightLegThigh.matrix.rotate(-g_frontRightLegThighAngle, 0, 0); // Setting the animation rotation for the whole front-right leg
+  frontRightLegThigh.matrix.scale(0.5, -0.5, 0.5); // Flipping the whole front-right leg vertically and scaling it by 1/2th
+  var frontRightLegThighCoordinatesMat = new Matrix4(frontRightLegThigh.matrix); // Setting the coordinate system for the whole front-right leg to be the front-right leg's thigh
+  frontRightLegThigh.matrix.scale(0.25, 0.75, 0.25); // Setting the custom 1/4th, 3/4th, 1/4th scale for the front-right leg's thigh
+  frontRightLegThigh.matrix.translate(-0.5, 0, 0); // Setting the custom X placement for the front-right leg's thigh
+  frontRightLegThigh.render(); // Rendering the front-right leg's thigh
+
+  // Draw a front-right leg's paw
+  var frontRightLegPaw = new Cube(); // Creating the front-right leg's paw as a small rectangle
+  frontRightLegPaw.textureNum = -2; // Use the colors on the front-right leg's paw
+  frontRightLegPaw.color = [0.5, 0.25, 0.1, 1]; // Coloring the front-right leg's paw as brown because black would be too hard to see
+  frontRightLegPaw.matrix = frontRightLegThighCoordinatesMat; // Setting the coordinate system for the whole front-right leg to be the front-right leg's thigh
+  frontRightLegPaw.matrix.translate(0, 0.65, 0); // Setting the custom Y placement for the front-right leg's paw
+  frontRightLegPaw.matrix.rotate(-g_frontRightLegPawAngle, 0, 0, 1); // Setting the animation rotation for the whole front-right leg
+  frontRightLegPaw.matrix.scale(0.20, 0.25, 0.20); // Setting the custom 1/5th, 1/4th, 1/5th scale for the front-right leg's paw
+  frontRightLegPaw.matrix.translate(-0.5, 0.45, -0.001); // Setting the custom X, Y, and Z (to avoid z-buffering) placement for the front-right leg's paw
+  frontRightLegPaw.render(); // Rendering the front-right leg's paw
+
+  // Draw a back-left leg's thigh
+  var backLeftLegThigh = new Cube(); // Creating the back-left leg's thigh as a small rectangle
+  backLeftLegThigh.textureNum = -2; // Use the colors on the back-left leg's thigh
+  backLeftLegThigh.color = [0.662, 0.662, 0.662, 1]; // Coloring it dark gray
+  backLeftLegThigh.matrix.setTranslate(0.25 + 0.5, 0 + 0.85, 0.0); // X, Y, and Z placement for the whole back-left leg
+  // backLeftLegThigh.matrix.setTranslate(0.25 - 24.5, 0 + 4.5, 0 - 24.5); // X, Y, and Z placement for the whole back-left leg
+  backLeftLegThigh.matrix.rotate(-5, 1, 0, 0); // Rotation for the whole back-left leg
+  backLeftLegThigh.matrix.rotate(-g_backLeftLegThighAngle, 0, 0); // Setting the animation rotation for the whole back-left leg
+  backLeftLegThigh.matrix.scale(0.5, -0.5, 0.5); // Flipping the whole back-left leg vertically and scaling it by 1/2th
+  var backLeftLegThighCoordinatesMat = new Matrix4(backLeftLegThigh.matrix); // Setting the coordinate system for the whole back-left leg to be the back-left leg's thigh
+  backLeftLegThigh.matrix.scale(0.25, 0.75, 0.25); // Setting the custom 1/4th, 3/4th, 1/4th scale for the back-left leg's thigh
+  backLeftLegThigh.matrix.translate(-0.5, 0, 0); // Setting the custom X placement for the back-left leg's thigh
+  backLeftLegThigh.render(); // Rendering the back-left leg's thigh
+
+  // Draw a back-left leg's paw
+  var backLeftLegPaw = new Cube(); // Creating the back-left leg's paw as a small rectangle
+  backLeftLegPaw.textureNum = -2; // Use the colors on the back-left leg's paw
+  backLeftLegPaw.color = [0.5, 0.25, 0.1, 1]; // Coloring the back-left leg's paw as brown because black would be too hard to see
+  backLeftLegPaw.matrix = backLeftLegThighCoordinatesMat; // Setting the coordinate system for the whole back-left leg to be the front-left leg's thigh
+  backLeftLegPaw.matrix.translate(0, 0.65, 0); // Setting the custom Y placement for the back-left leg's paw
+  backLeftLegPaw.matrix.rotate(-g_backLeftLegPawAngle, 0, 0, 1); // Setting the animation rotation for the whole back-left leg
+  backLeftLegPaw.matrix.scale(0.20, 0.25, 0.20); // Setting the custom 1/5th, 1/4th, 1/5th scale for the back-left leg's paw
+  backLeftLegPaw.matrix.translate(-0.5, 0.45, -0.001); // Setting the custom X, Y, and Z (to avoid z-buffering) placement for the back-left leg's paw
+  backLeftLegPaw.render(); // Rendering the back-left leg's paw
+
+  // Draw a back-right leg's thigh
+  var backRightLegThigh = new Cube(); // Creating the back-right leg's thigh as a small rectangle
+  backRightLegThigh.textureNum = -2; // Use the colors on the back-right leg's thigh
+  backRightLegThigh.color = [0.662, 0.662, 0.662, 1]; // Coloring it dark gray
+  backRightLegThigh.matrix.setTranslate(0.25 + 0.5, 0 + 0.85, 0.5); // X, Y, and Z placement for the whole back-right leg
+  // backRightLegThigh.matrix.setTranslate(0.25 - 24.5, 0 + 4.5, 0.5 - 24.5); // X, Y, and Z placement for the whole back-right leg
+  backRightLegThigh.matrix.rotate(-5, 1, 0, 0); // Rotation for the whole left leg
+  backRightLegThigh.matrix.rotate(-g_backRightLegThighAngle, 0, 0); // Setting the animation rotation for the whole back-right leg
+  backRightLegThigh.matrix.scale(0.5, -0.5, 0.5); // Flipping the whole back-right leg vertically and scaling it by 1/2th
+  var backRightLegThighCoordinatesMat = new Matrix4(backRightLegThigh.matrix); // Setting the coordinate system for the whole front-right leg to be the back-right leg's thigh
+  backRightLegThigh.matrix.scale(0.25, 0.75, 0.25); // Setting the custom 1/4th, 3/4th, 1/4th scale for the back-right leg's thigh
+  backRightLegThigh.matrix.translate(-0.5, 0, 0); // Setting the custom X placement for the back-right leg's thigh
+  backRightLegThigh.render(); // Rendering the back-right leg's thigh
+
+  // Draw a back-right leg's paw
+  var backRightLegPaw = new Cube(); // Creating the back-right leg's paw as a small rectangle
+  backRightLegPaw.textureNum = -2; // Use the colors on the back-right leg's paw
+  backRightLegPaw.color = [0.5, 0.25, 0.1, 1]; // Coloring the back-right leg's paw as brown because black would be too hard to see
+  backRightLegPaw.matrix = backRightLegThighCoordinatesMat; // Setting the coordinate system for the whole back-right leg to be the back-right leg's thigh
+  backRightLegPaw.matrix.translate(0, 0.65, 0); // Setting the custom Y placement for the back-right leg's paw
+  backRightLegPaw.matrix.rotate(-g_backRightLegPawAngle, 0, 0, 1); // Setting the animation rotation for the whole back-right leg
+  backRightLegPaw.matrix.scale(0.20, 0.25, 0.20); // Setting the custom 1/5th, 1/4th, 1/5th scale for the back-right leg's paw
+  backRightLegPaw.matrix.translate(-0.5, 0.45, -0.001); // Setting the custom X, Y, and Z (to avoid z-buffering) placement for the back-right leg's paw
+  backRightLegPaw.render(); // Rendering the back-right leg's paw
+
+  // Draw a crown
+  var crown = new Prism();
+  crown.textureNum = -2; // Use the colors on the crown
+  crown.color = [1, 0.843, 0, 1]; // Coloring the crown gold
+  crown.matrix.translate(-0.5 + 0.5, 0.75 + 0.85, 0.15); // Setting the crown's placement on the top of the head
+  // crown.matrix.translate(-0.5 - 24.5, 0.75 + 4.5, 0.15 - 24.5); // Setting the crown's placement on the top of the head
+  crown.matrix.scale(0.5, 0.25, 0.25); // Scaling the crown
+  crown.render(); // Rendering the crown
+
+  // Draw a head
+  var head = new Cube();
+  head.textureNum = -2; // Use the colors on the head
+  head.color = [0.827, 0.827, 0.827, 1]; // Coloring the head light gray
+  head.matrix.translate(-0.5 + 0.5, 0.5 + 0.85, 0.15); // Setting the head's placement at the top of the body
+  // head.matrix.translate(-0.5 - 24.5, 0.5 + 4.5, 0.15 - 24.5); // Setting the head's placement at the top of the body
+  head.matrix.scale(0.25, 0.25, 0.25); // Scaling the crown
+  head.render();
+
+  // Draw a tail
+  var tail = new Cube(); // Creating the bottom tail as a small rectangle
+  tail.textureNum = -2; // Use the colors on the tail
+  tail.color = [0.662, 0.662, 0.662, 1]; // Coloring it dark gray
+  tail.matrix.translate(0.45 + 0.5, 0.5 + 0.85, 0.15); // X, Y, and Z placement for the tail
+  // tail.matrix.translate(0.45 - 24.5, 0.5 + 4.5, 0.15 - 24.5); // X, Y, and Z placement for the tail
+  tail.matrix.rotate(-0.75, 1, 0, 0); // Rotation for the tail
+  tail.matrix.rotate(-g_tailAngle, 0, 0); // Setting the animation rotation for the tail
+  tail.matrix.scale(0.2, 0.4, 0.2); // Flipping the tail vertically and scaling it by a 1/5th, 2/5th, 1/5th scale
+  tail.render(); // Rendering the bottom tail
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;
